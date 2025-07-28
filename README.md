@@ -15,6 +15,20 @@ A **multi-tab web interface** for generating rich, detailed roleplay (RP) charac
 
 ---
 
+## 🖼️ Screenshots
+
+<p float="left">
+  <img src="https://i.imgur.com/6hbBoEz.png" width="25%" />
+  <img src="https://i.imgur.com/GWfon3H.png" width="25%" />
+</p>
+
+<p float="left">
+  <img src="https://i.imgur.com/Fj4ogZx.png" width="25%" />
+  <img src="https://i.imgur.com/PeR5LoJ.png" width="25%" />
+</p>
+
+---
+
 ## 🛠️ Prerequisites
 
 - **Python 3.10+**
