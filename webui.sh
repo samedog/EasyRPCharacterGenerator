@@ -15,11 +15,11 @@ if ! ./venv/bin/python3 --version &>/dev/null; then
   exit 1
 fi
 
-# Install missing packages from requirements.txt if the file exists
-if [ -f "requirements.txt" ]; then
-  echo "Installing missing requirements from requirements.txt..."
+# Install missing packages from requirenments.txt if the file exists
+if [ -f "requirenments.txt" ]; then
+  echo "Installing missing requirenments from requirenments.txt..."
   ./venv/bin/pip3 install --upgrade pip > /dev/null
-  ./venv/bin/pip3 install -r requirements.txt
+  ./venv/bin/pip3 install -r requirenments.txt
 else
   echo "No requirenments.txt found. Skipping dependency installation."
 fi

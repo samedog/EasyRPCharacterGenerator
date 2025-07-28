@@ -72,7 +72,7 @@ css="""
 .gr-button.loading::after { content: " ⏳"; }
 """) as demo:
     with gr.Row():
-        gr.Markdown("# 🧬 Easy Character Generator")
+        gr.Markdown("# 🧬 Easy RP Character Generator")
             
     with gr.Tab("🧬 Generate from Tags"):
         with gr.Row():
