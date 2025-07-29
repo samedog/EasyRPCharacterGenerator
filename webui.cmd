@@ -18,13 +18,13 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Install requirenments if the file exists
-if exist "requirenments.txt" (
-    echo Installing missing requirements from requirenments.txt...
+REM Install requirements if the file exists
+if exist "requirements.txt" (
+    echo Installing missing requirements from requirements.txt...
     venv\Scripts\python.exe -m pip install --upgrade pip >nul
-    venv\Scripts\pip.exe install -r requirenments.txt
+    venv\Scripts\pip.exe install -r requirements.txt
 ) else (
-    echo No requirenments.txt found. Skipping dependency installation.
+    echo No requirements.txt found. Skipping dependency installation.
 )
 
 REM Run the Gradio app
