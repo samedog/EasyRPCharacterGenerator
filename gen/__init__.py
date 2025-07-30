@@ -10,7 +10,9 @@ from .textgen import (
     generate_persona_pollinations, 
     generate_background_pollinations,
     generate_setting_pollinations,
-    generate_first_message_pollinations
+    generate_first_message_pollinations,
+    generate_example_dialogue,
+    generate_example_dialogue_pollinations
 )
 from .imagegen import (
     generate_image_with_api,

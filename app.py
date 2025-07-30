@@ -9,7 +9,8 @@ from gen import (
     ##textgen.py
     generate_name, generate_persona, generate_background, generate_setting, generate_first_message,
     generate_name_pollinations, generate_persona_pollinations, generate_background_pollinations,
-    generate_setting_pollinations, generate_first_message_pollinations,
+    generate_setting_pollinations, generate_first_message_pollinations,generate_example_dialogue,
+    generate_example_dialogue_pollinations,
     ##imagegen.py
     generate_image_with_api, generate_image_with_pollinations,
     ##imagequery.py
@@ -21,7 +22,7 @@ from gen import (
     character_exporter_png
 )
     
-DEFAULT_SEED = random.randint(100000, 999999)
+DEFAULT_SEED = random.randint(1, 999999)
 
 def refresh_model_choices(api_url):
     return gr.update(choices=fetch_models(api_url), value="default")
@@ -29,7 +30,6 @@ def refresh_model_choices(api_url):
 def handle_llm_check(api_url):
     status, models = check_llm_api_online(api_url)
     return status, gr.update(choices=models, value=models[0] if models else "default")
-
 
 def generate_image_switch(polli_prompt, prompt, source, url, seed, model, style, negative_prompt, height, width):
     if source == "📡 Pollinations":
@@ -39,9 +39,12 @@ def generate_image_switch(polli_prompt, prompt, source, url, seed, model, style,
         result = generate_image_with_api(prompt, url, width, height, negative_prompt, seed)
         return result
 
+def reroll_seed():
+    return random.randint(1, 999999)
 
-def on_export(persona, setting, image):
-    png_bytes, tmp_name = character_exporter_png(persona, setting, image)
+
+def on_export(persona, setting, dialogue, tags, image):
+    png_bytes, tmp_name = character_exporter_png(persona, setting, dialogue, tags, image)
     
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
     tmp.write(png_bytes.getvalue())
@@ -133,10 +136,15 @@ css="""
                     with gr.Row():
                         gr.Markdown("General Image Settings")
                     with gr.Row():
-                        seed_input = gr.Number(label="Seed", value=DEFAULT_SEED, precision=0, scale=1)
+                        with gr.Column():
+                            seed_input = gr.Number(label="Seed", value=DEFAULT_SEED, precision=0, scale=1)
+                        with gr.Column():
+                            reroll_button = gr.Button("🎲 Re-roll Seed", scale=1)
                     with gr.Row():
-                        width_input = gr.Number(label="Width", value=360, precision=0, scale=1)
-                        height_input = gr.Number(label="Height", value=640, precision=0, scale=1)
+                        with gr.Column():
+                            width_input = gr.Number(label="Width", value=360, precision=0, scale=1)
+                        with gr.Column():
+                            height_input = gr.Number(label="Height", value=640, precision=0, scale=1)
                         
                 with gr.Group():
                     generate_all_button = gr.Button("⚡ Generate All ⚡", variant="primary")
@@ -159,6 +167,18 @@ css="""
                                 generate_setting_button = gr.Button("📜 Generate Setting (Failsafe)", size=1)
                                 generate_firstmessage_button = gr.Button("📜 Generate First Message (Failsafe)", size=1)
                             roleplay_output = gr.Textbox(label="RP Setting and First Message", lines=12, elem_classes=["scrollable-textbox"])
+                    with gr.Row():
+                        with gr.Column():
+                            generate_dialogue_button = gr.Button("🧬📜 Generate Example Dialogue", scale=2)
+                            with gr.Row():
+                                dialogue_from_llm = gr.Textbox(label="Example Dialogue (speech pattern and mannerisms)", lines=12, elem_classes=["scrollable-textbox"])
+
+                
+                reroll_button.click(
+                lambda: reroll_seed(),
+                    None,
+                    seed_input
+                )
 
                 generate_name_button.click(
                     lambda tags, gender, url, model, api_key, llm_status: (
@@ -233,6 +253,13 @@ css="""
                     roleplay_output
                 )
                 
+                generate_dialogue_button.click(
+                    lambda persona, setting_text, tags, url, api_key, llm_status: (
+                        generate_example_dialogue_pollinations(persona, setting_text, tags) if llm_status != "✅ LLM API is online and reachable." else generate_example_dialogue(persona, setting_text, tags, url, api_key=api_key)
+                    ),
+                    [persona_output, roleplay_output, tags_input, llm_api_url_input, llm_api_key_input, llm_status_output],
+                    dialogue_from_llm
+                )
             with gr.Column(scale=1):
                 gr.Markdown("## 🎨 Image Generator")
                 with gr.Tabs():
@@ -357,11 +384,17 @@ css="""
             [persona_output, roleplay_output, tags_input, llm_api_url_input, llm_api_key_input, llm_status_output],
             roleplay_output
         ).then(
+            lambda persona, setting_text, tags, url, api_key, llm_status: (
+                generate_example_dialogue_pollinations(persona, setting_text, tags) if llm_status != "✅ LLM API is online and reachable." else generate_example_dialogue(persona, setting_text, tags, url, api_key=api_key)
+            ),
+            [persona_output, roleplay_output, tags_input, llm_api_url_input, llm_api_key_input, llm_status_output],
+            dialogue_from_llm
+        ).then(
             lambda: gr.update(value="📝 Generating Image Prompt..."),
             None,
             generation_status
         ).then(
-    lambda persona, source: (
+            lambda persona, source: (
             generate_prompt_from_persona(persona), None
             ) if source == "📡 Pollinations" else (
                 None, generate_prompt_from_persona(persona)
@@ -421,18 +454,24 @@ css="""
                     image_input = gr.Image(type="pil", label="Upload an Image", height=400, width=300, scale=2)
         with gr.Group():
             with gr.Row():
+                fake_tags = gr.Textbox("", visible=False)
                 vision_generate_button = gr.Button("🔍 Analyze Image (GENERATE ALL)", variant="primary")
             with gr.Row():
                 with gr.Column():
                     vision_generate_persona_button = gr.Button("🧬 Generate Persona (Failsafe)", size="sm")
                     vision_generate_background_button = gr.Button("📜 Generate Background (Failsafe)", size="sm")
+                    
                 with gr.Column():
                     vision_generate_setting_button = gr.Button("📜 Generate Setting (Failsafe)", size="sm")
                     vision_generate_firstmessage_button = gr.Button("📜 Generate First Message (Failsafe)", size="sm")
+                    
+                with gr.Column():
+                    vision_generate_dialogue_button = gr.Button("📜 Generate example Dialogue", size="sm")
+                    gr.Markdown("Example dialogue to showcase the characters speech patterns.", height="sm")
             with gr.Row():
                 vision_response_output = gr.Textbox(label="Character Persona (Info and Background)", lines=12, elem_classes=["scrollable-textbox"])
                 setting_from_vision = gr.Textbox(label="RP Setting and First Message", lines=12, elem_classes=["scrollable-textbox"])
-        
+                dialogue_from_vision = gr.Textbox(label="Example Dialogue", lines=12, elem_classes=["scrollable-textbox"])
         vision_generate_button.click(
             lambda image, api_url, model, api_key: generate_persona_from_image(image, api_url, model, api_key),
             [image_input, vision_api_url_input, vision_model_dropdown, vision_api_key_input],
@@ -454,6 +493,12 @@ css="""
             ),
             [vision_response_output, setting_from_vision, tags_input, vision_api_url_input, vision_api_key_input],
             setting_from_vision
+        ).then(
+            lambda persona, setting_text, tags, url, api_key: (
+                generate_example_dialogue(persona, setting_text, tags, url, api_key=api_key)
+            ),
+            [vision_response_output, setting_from_vision, tags_input, vision_api_url_input, vision_api_key_input],
+            dialogue_from_vision
         )
         
         vision_generate_persona_button.click(
@@ -482,14 +527,23 @@ css="""
             [vision_response_output, setting_from_vision, tags_input, vision_api_url_input, vision_api_key_input],
             setting_from_vision
         )
+
+        vision_generate_dialogue_button.click(
+            lambda persona, setting_text, tags, url, api_key: (
+                generate_example_dialogue(persona, setting_text, tags, url, api_key=api_key)
+            ),
+            [vision_response_output, setting_from_vision, tags_input, vision_api_url_input, vision_api_key_input],
+            dialogue_from_vision
+        )
+
         export_button.click(
-            lambda persona, roleplay, image: on_export(persona, roleplay, image),
-            [persona_output, roleplay_output, output_image],
+            lambda persona, roleplay, dialogue, tags, image: on_export(persona, roleplay, dialogue, tags, image),
+            [persona_output, roleplay_output, dialogue_from_llm, tags_input, output_image],
             [download_btn, download_btn, export_file_path]
         )
         export_vision_button.click(
-            lambda persona, roleplay, image: on_export(persona, roleplay, image),
-            [vision_response_output, setting_from_vision, image_input],
+            lambda persona, roleplay, dialogue, tags, image: on_export(persona, roleplay, dialogue, tags, image),
+            [vision_response_output, setting_from_vision, dialogue_from_vision, fake_tags, image_input],
             [download_vision_btn, download_vision_btn, export_file_path]
         )
     

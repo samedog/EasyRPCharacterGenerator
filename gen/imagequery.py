@@ -5,6 +5,7 @@ import json
 import re
 from PIL import Image  # If not already imported
 from io import BytesIO
+import random
 
 from .helpers import sort_persona_json
 
@@ -12,17 +13,21 @@ def generate_persona_from_image(image, api_url, model, api_key=None, retries=3):
 
     if not image:
         return "Please upload an image."
-
+    seed = random.randint(0, 999999)
     system_msg = (
         "You are a character-profile generator. "
+        f"You should generate details based on the image and this integer seed: {seed}. "
+        "Base the occupation, personality, and context on visual clues—such as clothing, setting, and expression. "
+        "If the character appears to wear ceremonial, traditional, or religious clothing, consider historical or thematic roles "
+        "such as priestess, noblewoman, monk, etc. "
+        "Do NOT default to modern professions like artist, designer, or influencer unless they are *clearly* signaled. "
         "Output ONLY a valid JSON object with EXACTLY the following keys (no extras): "
         "[Full Name, Age, Race, Gender, Nationality, Occupation, Height, Intelligence, Personality, Likes, Dislikes, "
         "Hobbies, Appearance, Breasts, Outfit, Underwear, Speech pattern, Sexuality, Libido, Fears, Goals, "
         "Sexual experience, Obedience rating, Enjoys during sex]. "
-        "You may infer or create details based on the visual input. "
-        "Do NOT add any explanations, comments, or text outside the JSON. "
-        f"Make sure the JSON is syntactically valid."
+        "Do NOT include any explanation or extra text outside the JSON object. Ensure the JSON is syntactically valid."
     )
+
 
     expected_keys = {
         "Full Name", "Age", "Race", "Gender", "Nationality", "Occupation", "Height", "Intelligence", "Personality",
@@ -46,8 +51,16 @@ def generate_persona_from_image(image, api_url, model, api_key=None, retries=3):
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
     user_msg = [
-        {"type": "text", "text": "Describe this character as if they were a fictional persona in detail using JSON."},
-        {"type": "image_url", "image_url": {"url": f"data:image/{img_format};base64,{img_str}"}}
+        {
+            "type": "text",
+            "text": f"Describe this character as a fictional persona using JSON. "
+                    f"Pay close attention to her clothing, setting, and demeanor. Use seed: {seed} for randomization. "
+                    "If she appears to belong to a specific profession, infer it based on those visual cues. "
+        },
+        {
+            "type": "image_url",
+            "image_url": {"url": f"data:image/{img_format};base64,{img_str}"}
+        }
     ]
 
     payload = {

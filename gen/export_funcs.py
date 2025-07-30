@@ -15,7 +15,7 @@
 ##        "personality": {personality},
 ##        "scenario": {scenario},
 ##        "first_mes": {first_message},
-##        "mes_example": "",
+##        "mes_example": {example_dialogue},
 ##        "tags": {tags}, ## ["tag1", "tag2", "etc"]
 ##        "avatar": "none",
 ##        "alternate_greetings": [],
@@ -107,14 +107,15 @@ from io import BytesIO
 import json
 import base64
 
-def character_exporter_png(persona: str, setting: str, image: Image.Image) -> BytesIO:
-    ## persona and settinfgs are strings of text, separated by "---"
+def character_exporter_png(persona, setting, example_dialogue, tags, image) -> BytesIO:
+    print("exporter...")
+    ## persona and settinfgs are strings of text, separated by "---", example dialogue is plaintext with new lines
     persona_parts = persona.strip().split('---')
     if len(persona_parts) != 2:
         raise ValueError("Persona must be split by '---' into description and background.")
     persona_meta = persona_parts[0].strip()
     background = persona_parts[1].strip()
-
+    example_dialogue = example_dialogue.strip()
     # persona fields
     persona_data = {}
     for line in persona_meta.splitlines():
@@ -133,12 +134,16 @@ def character_exporter_png(persona: str, setting: str, image: Image.Image) -> By
     first_message = setting_parts[1].strip()
 
 
-    tags = list(filter(None, [
+    passed_tags_list = [t.strip() for t in tags.split(',') if t.strip()]
+
+    persona_tags = list(filter(None, [
         persona_data.get("Race", ""),
         persona_data.get("Occupation", ""),
         persona_data.get("Gender", ""),
         persona_data.get("Nationality", "")
     ]))
+
+    tags = list(dict.fromkeys(passed_tags_list + persona_tags))
 
     # Date
     now = datetime.now()
@@ -160,7 +165,7 @@ def character_exporter_png(persona: str, setting: str, image: Image.Image) -> By
             "personality": personality,
             "scenario": scenario,
             "first_mes": first_message,
-            "mes_example": "",
+            "mes_example": f"{example_dialogue}",
             "tags": tags,
             "avatar": "none",
             "alternate_greetings": [],

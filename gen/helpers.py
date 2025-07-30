@@ -38,7 +38,7 @@ def check_llm_api_online(api_url, api_key=None):
     except requests.RequestException as e:
         return f"Error: {str(e)}", ["default"]
 
-def query_llm(system_prompt, user_prompt, api_url, api_key=None, model="openai", max_tokens=1024, stop=None):
+def query_llm(system_prompt, user_prompt, api_url, api_key=None, model="openai", max_tokens=1024, stop=None, timeout=10):
     headers = {
         "Content-Type": "application/json",
     }
@@ -57,10 +57,17 @@ def query_llm(system_prompt, user_prompt, api_url, api_key=None, model="openai",
         "stop": stop
     }
 
-    response = requests.post(f"{api_url}/chat/completions", headers=headers, json=data)
-    response.raise_for_status()
-    return response.json()['choices'][0]['message']['content'].strip()
-    
+    try:
+        response = requests.post(
+            f"{api_url}/chat/completions",
+            headers=headers,
+            json=data,
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()['choices'][0]['message']['content'].strip()
+    except (requests.exceptions.Timeout, requests.exceptions.RequestException) as e:
+        return None  # Or return f"Error: {e}" if you want error detail
 ## general functions
 
 

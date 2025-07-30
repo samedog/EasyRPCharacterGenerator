@@ -222,6 +222,7 @@ def generate_first_message_pollinations(persona, setting, tags=None, retries=5):
         user_msg = (
             "Based on the following character information, create a vivid first interaction between the character and the user "
             "(max 400 words) that describes a roleplay scene. "
+            "The dialogue should highlight the character’s personality and speech pattern through their word choices and actions. "
             "Dialogue should be in straight double quotes. All actions, expressions, and physical gestures MUST be enclosed in "
             "single asterisks (e.g., *smiles* or *walks closer*). Use this formatting consistently throughout the interaction. "
             "Do NOT omit the asterisks under any circumstances except for the Dialogue. write at least 2 parragraphs. "
@@ -255,6 +256,59 @@ def generate_first_message_pollinations(persona, setting, tags=None, retries=5):
 
     except Exception as e:
         return f"Pollinations error: {str(e)}"
+
+
+def generate_example_dialogue_pollinations(persona, setting, tags=None, retries=5):
+    time.sleep(3)
+    if not persona or not setting:
+        return "Missing required fields."
+    try:
+        system_msg = (
+            "You are a creative writer. Generate a short, vivid example interaction (max 100 words) "
+            "paragraph for a fictional character and the user in a roleplay. Do not include explanations or extra text."
+        )
+
+        user_msg = (
+            "Based on the following character information, create a short example of dialogue between the character and the user. "
+            "The dialogue should highlight the character’s personality and speech pattern through their word choices and actions. "
+            "Each line of dialogue must be clearly prefixed by the speaker's label, either {{user}}: or {{char}}:. "
+            "Use **no more than 100 words total**, but split the response into **at least two paragraphs** to show pacing or emotional shifts. "
+            "Spoken lines must be in straight double quotes only. "
+            "All character actions or expressions must be enclosed in single asterisks, like *smiles* or *leans forward*. "
+            "Do NOT use any other formatting, markdown, or symbols. Do NOT include any narration or explanation. "
+            "Refer to the user as {{user}} exactly as written. Refer to the character as {{char}} exactly as written. "
+            "This is only an expressive style sample, not a complete scene.\n\n"
+            f"Character Persona and background:\n{persona}\n\n"
+            f"Tags (if any):\n{tags or 'Infer from persona and background'}\n\n"
+            f"Setting:\n{setting}"
+        )
+        
+    
+        prompt = f"{system_msg}\n{user_msg}"
+        encoded_prompt = requests.utils.quote(prompt)
+
+        for attempt in range(retries):
+            try:
+                full_url = f"https://text.pollinations.ai/prompt/{encoded_prompt}?private=true"
+                response = requests.get(full_url, timeout=10)
+                if response.status_code > 200:
+                    continue
+                response.raise_for_status()
+
+                result = response.text.strip()
+                #print(result)               
+                if result and len(result.split()) > 2:
+                    return "<START>\n\n"+result
+            except requests.RequestException:
+                continue
+            time.sleep(5)
+
+        return "Error: Could not generate first interaction."
+    except Exception as e:
+        return f"Pollinations error: {str(e)}"
+
+
+
         
 ## OpenAI
 
@@ -411,6 +465,7 @@ def generate_first_message(persona, setting, tags=None, api_url=None, api_key=No
     user_msg = (
             "Based on the following character information, create a vivid first interaction between the character and the user "
             "(max 400 words) that describes a roleplay scene. "
+            "The dialogue should highlight the character’s personality and speech pattern through their word choices and actions. "
             "Dialogue should be in straight double quotes. All actions, expressions, and physical gestures MUST be enclosed in "
             "single asterisks (e.g., *smiles* or *walks closer*). Use this formatting consistently throughout the interaction. "
             "Do NOT omit the asterisks under any circumstances except for the Dialogue. write at least 2 parragraphs. "
@@ -434,5 +489,45 @@ def generate_first_message(persona, setting, tags=None, api_url=None, api_key=No
         time.sleep(5)
 
     return f"Error generating first interaction: {str(last_exception) if last_exception else 'Unknown error'}"
+
+def generate_example_dialogue(persona, setting, tags=None, api_url=None, api_key=None, retries=5):
+    time.sleep(3)
+    if not persona or not setting:
+        return "Missing required fields."
+
+    system_msg = (
+        "You are a creative writer. Generate a short, vivid example interaction (max 100 words) "
+        "paragraph for a fictional character and the user in a roleplay. Do not include explanations or extra text."
+    )
+
+    user_msg = (
+        "Based on the following character information, create a short example of dialogue between the character and the user. "
+        "The dialogue should highlight the character’s personality and speech pattern through their word choices and actions. "
+        "Each line of dialogue must be clearly prefixed by the speaker's label, either {{user}}: or {{char}}:. "
+        "Use **no more than 100 words total**, but split the response into **at least two paragraphs** to show pacing or emotional shifts. "
+        "Spoken lines must be in straight double quotes only. "
+        "All character actions or expressions must be enclosed in single asterisks, like *smiles* or *leans forward*. "
+        "Do NOT use any other formatting, markdown, or symbols. Do NOT include any narration or explanation. "
+        "Refer to the user as {{user}} exactly as written. Refer to the character as {{char}} exactly as written. "
+        "This is only an expressive style sample, not a complete scene.\n\n"
+        f"Character Persona and background:\n{persona}\n\n"
+        f"Tags (if any):\n{tags or 'Infer from persona and background'}\n\n"
+        f"Setting:\n{setting}"
+    )
+
+    last_exception = None
+    for _ in range(retries):
+        try:
+            response = query_llm(system_msg, user_msg, api_url, api_key, max_tokens=2048)
+            #print(response)
+            if response and len(response.split()) > 2:
+                return "<START>\n\n"+response.strip()
+                
+        except Exception as e:
+            last_exception = e
+        time.sleep(5)
+
+    return f"Error generating example dialogue: {str(last_exception) if last_exception else 'Unknown error'}"
+
 
 
