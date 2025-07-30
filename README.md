@@ -18,13 +18,14 @@
   ## 🖼️ Screenshots
 
   <p float="left">
-    <img src="https://i.imgur.com/6hbBoEz.png" width="25%" />
-    <img src="https://i.imgur.com/GWfon3H.png" width="25%" />
+    <img src="https://imgur.com/eUB0uue.png" width="25%" />
+    <img src="https://imgur.com/fSWjzQ9.png" width="25%" />
+    <img src="https://imgur.com/Zr6ZoMD.png" width="25%" />
   </p>
 
   <p float="left">
-    <img src="https://i.imgur.com/Fj4ogZx.png" width="25%" />
-    <img src="https://i.imgur.com/PeR5LoJ.png" width="25%" />
+    <img src="https://imgur.com/bQaW0iv.png" width="25%" />
+    <img src="https://imgur.com/GiCeqya.png" width="25%" />
   </p>
 
   ---
