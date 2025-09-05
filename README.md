@@ -20,14 +20,16 @@ A **multi-tab web interface** for generating rich, detailed roleplay (RP) charac
 ## 🖼️ Screenshots
 
 <p float="left">
-  <img src="https://imgur.com/eUB0uue.png" width="25%" />
+  <img src="https://imgur.com/VKDQqEr.png" width="25%" />
   <img src="https://imgur.com/fSWjzQ9.png" width="25%" />
   <img src="https://imgur.com/Zr6ZoMD.png" width="25%" />
+
 </p>
 
 <p float="left">
   <img src="https://imgur.com/bQaW0iv.png" width="25%" />
   <img src="https://imgur.com/GiCeqya.png" width="25%" />
+  <img src="https://imgur.com/4qaKwhS.png" width="25%" />
 </p>
 
 ---
