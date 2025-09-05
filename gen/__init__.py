@@ -35,3 +35,7 @@ from .helpers import(
 from .export_funcs import(
     character_exporter_png
 )
+
+from .charedit import(
+    read_data
+)

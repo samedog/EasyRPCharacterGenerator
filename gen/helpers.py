@@ -84,9 +84,9 @@ def generate_prompt_from_persona(persona):
         race = next((line.split(":", 1)[1].strip() for line in lines if "Race:" in line), "")
         gender = next((line.split(":", 1)[1].strip() for line in lines if "Gender:" in line), "")
         appearance = next((line.split(":", 1)[1].strip() for line in lines if "Appearance:" in line), "")
-        breasts = next((line.split(":", 1)[1].strip() for line in lines if "Breasts:" in line), "")
+        breasts = "breasts: "+next((line.split(":", 1)[1].strip() for line in lines if "Breasts:" in line), "")
         outfit = next((line.split(":", 1)[1].strip() for line in lines if "Outfit:" in line), "")
-        underwear = next((line.split(":", 1)[1].strip() for line in lines if "Underwear:" in line), "")
+        underwear = "underwear: "+next((line.split(":", 1)[1].strip() for line in lines if "Underwear:" in line), "")
 
         # Graceful fallback logic
         appearance_parts = [part for part in [appearance, breasts] if part]
@@ -100,10 +100,10 @@ def generate_prompt_from_persona(persona):
 
 def sort_persona_json(persona_json):
     key_order = [
-        "Full Name", "Age", "Race", "Gender", "Nationality", "Occupation", "Height",
+        "Full Name", "Nickname", "Age", "Race", "Gender", "Nationality", "Occupation", "Height",
         "Intelligence", "Personality", "Likes", "Dislikes", "Hobbies", "Appearance",
         "Breasts", "Outfit", "Underwear", "Speech pattern", "Sexuality", "Libido",
-        "Fears", "Goals", "Sexual experience", "Obedience rating", "Enjoys during sex"
+        "Fears", "Goals", "Sexual experience", "Obedience rating", "Enjoys during intimacy"
     ]
 
     sorted_json = {key: persona_json.get(key, "") for key in key_order}

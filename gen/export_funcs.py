@@ -107,40 +107,40 @@ from io import BytesIO
 import json
 import base64
 
-def character_exporter_png(persona, setting, example_dialogue, tags, image) -> BytesIO:
+def character_exporter_png(persona, setting, example_dialogue, tags, image, name="", personality="") -> BytesIO:
     print("exporter...")
     ## persona and settinfgs are strings of text, separated by "---", example dialogue is plaintext with new lines
-    persona_parts = persona.strip().split('---')
-    if len(persona_parts) != 2:
-        raise ValueError("Persona must be split by '---' into description and background.")
-    persona_meta = persona_parts[0].strip()
-    background = persona_parts[1].strip()
-    example_dialogue = example_dialogue.strip()
+    #persona_parts = persona.strip().split('---')
+    #if len(persona_parts) != 2:
+    #    raise ValueError("Persona must be split by '---' into description and background.")
+    #persona_meta = persona_parts[0].strip()
+    #background = persona_parts[1].strip()
+    #example_dialogue = example_dialogue.strip()
     # persona fields
     persona_data = {}
-    for line in persona_meta.splitlines():
+    for line in persona.splitlines():
         if ':' in line:
             key, value = line.split(':', 1)
             persona_data[key.strip()] = value.strip()
 
-    name = persona_data.get("Full Name", "Unknown")
-    personality = persona_data.get("Personality", "Unknown")
+    name = persona_data.get("Full Name", name)
+    personality = persona_data.get("Personality", personality)
+    #background = persona_data.get("Background", "Unknown")
 
 
     setting_parts = setting.strip().split('---')
     if len(setting_parts) != 2:
         raise ValueError("Setting must be split by '---' into scenario and first message.")
+
     scenario = setting_parts[0].strip()
     first_message = setting_parts[1].strip()
-
-
     passed_tags_list = [t.strip() for t in tags.split(',') if t.strip()]
 
     persona_tags = list(filter(None, [
         persona_data.get("Race", ""),
-        persona_data.get("Occupation", ""),
+        #persona_data.get("Occupation", ""),
         persona_data.get("Gender", ""),
-        persona_data.get("Nationality", "")
+        #persona_data.get("Nationality", "")
     ]))
 
     tags = list(dict.fromkeys(passed_tags_list + persona_tags))
@@ -154,14 +154,14 @@ def character_exporter_png(persona, setting, example_dialogue, tags, image) -> B
         "spec": "chara_card_v3",
         "spec_version": "3.0",
         "name": name,
-        "description": f"{persona_meta}\n\n{background}",
+        "description": f"{persona}",
         "personality": personality,
         "scenario": scenario,
         "first_mes": first_message,
         "mes_example": "",
         "data": {
             "name": name,
-            "description": f"{persona_meta}\n\n{background}",
+            "description": f"{persona}",
             "personality": personality,
             "scenario": scenario,
             "first_mes": first_message,

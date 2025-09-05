@@ -8,13 +8,16 @@ import time
 from .helpers import sort_persona_json, query_llm
 ## pollinations
 
-def generate_name_pollinations(tags, gender, retries=5):
+def generate_name_pollinations(tags, gender, extra_instruct="", retries=5):
     time.sleep(3)
     try:
         seed = random.randint(100000, 999999)
         system_msg = f"You are a character name generator. Output exactly one randomly generated Western-style name (based off this int seed: {seed}) (2–4 words)."
-        user_msg = f"Topic: {tags} | Gender: {gender}\nGenerate a single character name."
-        prompt = f"{system_msg} {user_msg}"
+        user_msg = (
+            f"Topic: {tags} | Gender: {gender}\nGenerate a single character name."
+            f"Extra instructions: {extra_instruct}"
+        )
+        prompt = f"{system_msg}\n{user_msg}\n{extra_instruct}"
         encoded_prompt = requests.utils.quote(prompt)
 
         for attempt in range(retries):
@@ -43,7 +46,7 @@ def generate_name_pollinations(tags, gender, retries=5):
     except Exception as e:
         return 
 
-def generate_persona_pollinations(name, tags, gender, retries=5):
+def generate_persona_pollinations(name, tags, gender, extra_instruct="", retries=5):
     time.sleep(3)
     if not name:
         return "Generate a name first."
@@ -52,11 +55,11 @@ def generate_persona_pollinations(name, tags, gender, retries=5):
         system_msg = (
             "You are a character-profile generator. "
             "Output ONLY a valid JSON object with EXACTLY the following keys (no extras): "
-            "[Full Name, Age, Race, Gender, Nationality, Occupation, Height, Intelligence, Personality, Likes, Dislikes, "
+            "[Full Name, Nickname, Age, Race, Gender, Nationality, Occupation, Height, Intelligence, Personality, Likes, Dislikes, "
             "Hobbies, Appearance, Breasts, Outfit, Underwear, Speech pattern, Sexuality, Libido, Fears, Goals, "
-            "Sexual experience, Obedience rating, Enjoys during sex]. "
+            "Sexual experience, Obedience rating, Enjoys during intimacy]. "
             "Do NOT add any explanations, comments, or text outside the JSON. "
-            "Make sure the JSON is syntactically valid."
+            "Make sure the JSON is syntactically valid. Make the nickname appropriate to her character and occupation (if applicable)"
         )
 
         user_msg = (
@@ -64,13 +67,14 @@ def generate_persona_pollinations(name, tags, gender, retries=5):
             f"Name: {name}\n"
             f"Themes/Tags: {tags}\n"
             f"Gender: {gender}"
+            f"Extra instructions: {extra_instruct}"
         )
 
-        prompt = f"{system_msg} {user_msg}"
+        prompt = f"{system_msg}\n{user_msg}"
         encoded_prompt = requests.utils.quote(prompt)
 
         expected_keys = {
-            "Full Name", "Age", "Race", "Gender", "Occupation", "Personality", "Appearance",
+            "Full Name", "Nickname", "Age", "Race", "Gender", "Occupation", "Personality", "Appearance",
             "Likes", "Dislikes", "Outfit", "Speech pattern", "Fears", "Goals"
         }
 
@@ -78,11 +82,9 @@ def generate_persona_pollinations(name, tags, gender, retries=5):
             try:
                 full_url = f"https://text.pollinations.ai/prompt/{encoded_prompt}?private=true"
                 response = requests.get(full_url, timeout=10)
-                #print(response)
                 if response.status_code > 200:
                     continue
                 response.raise_for_status()
-
                 raw = response.text.strip()
                 raw = re.sub(r"^```json\s*", "", raw)
                 raw = re.sub(r"\s*```$", "", raw)
@@ -112,8 +114,7 @@ def generate_persona_pollinations(name, tags, gender, retries=5):
     except Exception as e:
         return f"Pollinations error: {str(e)}"
 
-
-def generate_background_pollinations(tags, persona, retries=5):
+def generate_background_pollinations(tags, persona, extra_instruct="", retries=5):
     time.sleep(3)
     if not tags or not persona:
         return "Missing required fields."
@@ -138,6 +139,7 @@ def generate_background_pollinations(tags, persona, retries=5):
             f"Themes: {tags}\n"
             f"Persona:\n{persona_text}\n"
             f"Write a single-paragraph character backstory. If no themes are provided, infer them from the character traits (e.g., sci-fi, fantasy, romance, domination, etc.)."
+            f"Extra instructions: {extra_instruct}"
         )
 
         prompt = f"{system_msg}\n{user_msg}"
@@ -153,7 +155,7 @@ def generate_background_pollinations(tags, persona, retries=5):
 
                 background = response.text.strip()
                 if background and len(background.split()) > 2:
-                    return background
+                    return ("Background: "+background)
             except requests.RequestException:
                 continue
             time.sleep(5)
@@ -162,7 +164,7 @@ def generate_background_pollinations(tags, persona, retries=5):
     except Exception as e:
         return f"Pollinations error: {str(e)}"
         
-def generate_setting_pollinations(persona, tags, retries=5):
+def generate_setting_pollinations(persona, tags, extra_instruct="", retries=5):
     time.sleep(3)
     if not persona:
         return "Missing required fields."
@@ -174,8 +176,8 @@ def generate_setting_pollinations(persona, tags, retries=5):
 
         # Generate the user message for the prompt
         user_msg = (
-            "Based on the following character information, create a short (max 100 words), vivid and general setting "
-            "that describes why the character and the user are together in a roleplay scenario. "
+            "Based on the following character information, create a short (max 100 words), general roleplay setting "
+            "that describes why the character and the user are together in this roleplay scenario. "
             "Avoid specific locations like bedrooms, bars, or offices. Do not include any permanent or restrictive elements. "
             "Make the setting flexible and imaginative. It is important to never assume the user's gender. "
             "Refer to the user in gender neutral way. "
@@ -184,6 +186,7 @@ def generate_setting_pollinations(persona, tags, retries=5):
             "Here are the details:\n\n"
             f"Character Persona and background:\n{persona}\n\n"
             f"Tags (if any):\n{tags}"
+            f"Extra instructions: {extra_instruct}"
         )
 
         prompt = f"{system_msg}\n{user_msg}"
@@ -193,23 +196,25 @@ def generate_setting_pollinations(persona, tags, retries=5):
             try:
                 full_url = f"https://text.pollinations.ai/prompt/{encoded_prompt}?private=true"
                 response = requests.get(full_url, timeout=10)
+                #print(response)
                 if response.status_code > 200:
                     continue
                 response.raise_for_status()
 
                 result = response.text.strip()
-                if result and len(result.split()) > 2:
+                #print(result)
+                if result:
                     return result
             except requests.RequestException:
                 continue
             time.sleep(5)
 
-        return "Error: Could not generate background."
+        return "Error: Could not generate setting."
 
     except Exception as e:
         return f"Pollinations error: {str(e)}"
 
-def generate_first_message_pollinations(persona, setting, tags=None, retries=5):
+def generate_first_message_pollinations(persona, setting, tags=None, extra_instruct="", retries=5):
     time.sleep(3)
     if not persona or not setting:
         return "Missing required fields."
@@ -231,6 +236,7 @@ def generate_first_message_pollinations(persona, setting, tags=None, retries=5):
             f"Character Persona and background:\n{persona}\n\n"
             f"Tags (if any):\n{tags or 'Infer from persona and background'}\n\n"
             f"Setting:\n{setting}"
+            f"Extra instructions: {extra_instruct}"
         )
 
         prompt = f"{system_msg}\n{user_msg}"
@@ -257,8 +263,7 @@ def generate_first_message_pollinations(persona, setting, tags=None, retries=5):
     except Exception as e:
         return f"Pollinations error: {str(e)}"
 
-
-def generate_example_dialogue_pollinations(persona, setting, tags=None, retries=5):
+def generate_example_dialogue_pollinations(persona, setting, tags=None, extra_instruct="", retries=5):
     time.sleep(3)
     if not persona or not setting:
         return "Missing required fields."
@@ -281,6 +286,7 @@ def generate_example_dialogue_pollinations(persona, setting, tags=None, retries=
             f"Character Persona and background:\n{persona}\n\n"
             f"Tags (if any):\n{tags or 'Infer from persona and background'}\n\n"
             f"Setting:\n{setting}"
+            f"Extra instructions: {extra_instruct}"
         )
         
     
@@ -306,17 +312,17 @@ def generate_example_dialogue_pollinations(persona, setting, tags=None, retries=
         return "Error: Could not generate first interaction."
     except Exception as e:
         return f"Pollinations error: {str(e)}"
-
-
-
         
 ## OpenAI
 
-def generate_name(tags, gender, api_url, model="default", api_key=None, retries=5):
+def generate_name(tags, gender, api_url, model="default", api_key=None, extra_instruct="", retries=5):
     time.sleep(3)
     #print("generating opename")
     system_msg = "You are a character name generator. Output exactly one randomly generated Western-style name (2–4 words)."
-    user_msg = f"Topic: {tags} | Gender: {gender}\nGenerate a single character name."
+    user_msg = (
+		f"Topic: {tags} | Gender: {gender}\nGenerate a single character name.\n"
+		f"Extra instructions: {extra_instruct}."
+    )
 
     for _ in range(retries):
         resp = query_llm(system_msg, user_msg, api_url, api_key, max_tokens=24)
@@ -325,8 +331,7 @@ def generate_name(tags, gender, api_url, model="default", api_key=None, retries=
             return lines[0]
     return "Error: Could not generate name."
 
-
-def generate_persona(name, tags, gender, api_url, api_key=None, retries=5):
+def generate_persona(name, tags, gender, api_url, api_key=None, extra_instruct="", retries=5):
     time.sleep(2)
     if not name:
         return "Generate a name first."
@@ -334,24 +339,25 @@ def generate_persona(name, tags, gender, api_url, api_key=None, retries=5):
     system_msg = (
         "You are a character-profile generator. "
         "Output ONLY a valid JSON object with EXACTLY the following keys (no extras): "
-        "[Full Name, Age, Race, Gender, Nationality, Occupation, Height, Intelligence, Personality, Likes, Dislikes, "
+        "[Full Name, Nickname, Age, Race, Gender, Nationality, Occupation, Height, Intelligence, Personality, Likes, Dislikes, "
         "Hobbies, Appearance, Breasts, Outfit, Underwear, Speech pattern, Sexuality, Libido, Fears, Goals, "
-        "Sexual experience, Obedience rating, Enjoys during sex]. "
+        "Sexual experience, Obedience rating, Enjoys during intimacy]. "
         "Do NOT add any explanations, comments, or text outside the JSON. "
-        "Make sure the JSON is syntactically valid."
+        "Make sure the JSON is syntactically valid. Make the nickname appropriate to her character and occupation (if applicable)"
     )
 
     user_msg = (
         f"Fill the JSON fields for the character with this information:\n"
         f"Name: {name}\n"
         f"Themes/Tags: {tags}\n"
-        f"Gender: {gender}"
+        f"Gender: {gender}\n"
+        f"Extra instructions: {extra_instruct}."
     )
     
     expected_keys = {
-        "Full Name", "Age", "Race", "Gender", "Occupation", "Personality", "Appearance", "Likes", "Dislikes", "Outfit", "Speech pattern", "Fears", "Goals"
+        "Full Name", "Nickname", "Age", "Race", "Gender", "Occupation", "Personality", "Appearance",
+            "Likes", "Dislikes", "Outfit", "Speech pattern", "Fears", "Goals"
         }
-
     
     for _ in range(retries):
         raw = query_llm(system_msg, user_msg, api_url, api_key, max_tokens=2048)
@@ -359,14 +365,11 @@ def generate_persona(name, tags, gender, api_url, api_key=None, retries=5):
         raw = re.sub(r"\s*```$", "", raw)
         try:
             persona_json = json.loads(raw)
-
-#            if set(persona_json.keys()) == set(expected_keys):
             if not expected_keys.issubset(persona_json.keys()):
                 continue 
             persona_json = sort_persona_json(persona_json)
             lines = []
             for key, val in persona_json.items():
-                #val = persona_json[key]
                 if isinstance(val, list):
                     val = ", ".join(str(item) for item in val)
                 lines.append(f"{key}: {val}")
@@ -376,8 +379,7 @@ def generate_persona(name, tags, gender, api_url, api_key=None, retries=5):
         time.sleep(5)
     return "Error: Could not generate valid JSON persona."
 
-
-def generate_background(tags, persona, api_url, api_key=None, retries=5):
+def generate_background(tags, persona, api_url, api_key=None, extra_instruct="", retries=5):
     time.sleep(3)
     if not persona:
         return "Missing required fields."
@@ -401,7 +403,8 @@ def generate_background(tags, persona, api_url, api_key=None, retries=5):
         f"Character: {name}\n"
         f"Themes: {tags}\n"
         f"Persona:\n{persona_text}\n"
-        f"Write a single-paragraph character backstory. If no themes are provided, infer them from the character traits (e.g., sci-fi, fantasy, romance, domination, etc.)."
+        f"Write a single-paragraph character backstory. If no themes are provided, infer them from the character traits (e.g., sci-fi, fantasy, romance, domination, etc.)\n"
+        f"Extra instructions: {extra_instruct}."
     )
 
     last_exception = None
@@ -409,15 +412,14 @@ def generate_background(tags, persona, api_url, api_key=None, retries=5):
         try:
             response = query_llm(system_msg, user_msg, api_url, api_key, max_tokens=2048)
             if response and len(response.split()) > 2:
-                return response
+                return "Background: "+response
         except Exception as e:
             last_exception = e
         time.sleep(3)
 
     return f"Error generating background: {str(last_exception) if last_exception else 'Unknown error'}"
     
-    
-def generate_setting(persona, tags, api_url, api_key=None, retries=5):
+def generate_setting(persona, tags, api_url, api_key=None, extra_instruct="", retries=5):
     time.sleep(3)
     if not persona:
         return "Missing required fields."
@@ -428,8 +430,8 @@ def generate_setting(persona, tags, api_url, api_key=None, retries=5):
     )
 
     user_msg = (
-        "Based on the following character information, create a short (max 100 words), vivid and general setting "
-        "that describes why the character and the user are together in a roleplay scenario. "
+        "Based on the following character information, create a short (max 100 words), general roleplay setting "
+        "that describes why the character and the user are together in this roleplay scenario. "
         "Avoid specific locations like bedrooms, bars, or offices. Do not include any permanent or restrictive elements. "
         "Make the setting flexible and imaginative. It is important to never assume the user's gender. "
         "Refer to the user in gender neutral way. "
@@ -438,6 +440,7 @@ def generate_setting(persona, tags, api_url, api_key=None, retries=5):
         "Here are the details (Do not include any of these fields entirely into the first message, just use them as reference and inspiration):\n\n"
         f"Character Persona and background:\n{persona}\n\n"
         f"Tags (if any):\n{tags}"
+        f"Extra instructions: {extra_instruct}."
     )
 
     last_exception = None
@@ -452,7 +455,7 @@ def generate_setting(persona, tags, api_url, api_key=None, retries=5):
 
     return f"Error generating setting: {str(last_exception) if last_exception else 'Unknown error'}"
 
-def generate_first_message(persona, setting, tags=None, api_url=None, api_key=None, retries=5):
+def generate_first_message(persona, setting, tags=None, api_url=None, api_key=None, extra_instruct="", retries=5):
     time.sleep(3)
     if not persona or not setting:
         return "Missing required fields."
@@ -474,6 +477,7 @@ def generate_first_message(persona, setting, tags=None, api_url=None, api_key=No
             f"Character Persona and background:\n{persona}\n\n"
             f"Tags (if any):\n{tags or 'Infer from persona and background'}\n\n"
             f"Setting:\n{setting}"
+            f"Extra instructions: {extra_instruct}."
         )
 
     last_exception = None
@@ -490,7 +494,7 @@ def generate_first_message(persona, setting, tags=None, api_url=None, api_key=No
 
     return f"Error generating first interaction: {str(last_exception) if last_exception else 'Unknown error'}"
 
-def generate_example_dialogue(persona, setting, tags=None, api_url=None, api_key=None, retries=5):
+def generate_example_dialogue(persona, setting, tags=None, api_url=None, api_key=None, extra_instruct="", retries=5):
     time.sleep(3)
     if not persona or not setting:
         return "Missing required fields."
@@ -513,6 +517,7 @@ def generate_example_dialogue(persona, setting, tags=None, api_url=None, api_key
         f"Character Persona and background:\n{persona}\n\n"
         f"Tags (if any):\n{tags or 'Infer from persona and background'}\n\n"
         f"Setting:\n{setting}"
+        f"Extra instructions: {extra_instruct}."
     )
 
     last_exception = None
